@@ -1,0 +1,4 @@
+node_modules
+dist
+examplesDist
+yarn-error.log

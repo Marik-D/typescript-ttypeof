@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "examplesDist",
+    "target": "esnext",
+    "skipLibCheck": true,
+    "downlevelIteration": true,
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "strict": true,
+    "baseUrl": ".",
+    "declaration": true,
+    "plugins": [
+      { "transform": "./dist/index.js" }
+    ]
+  },
+  "include": [
+    "examples/*.ts"
+  ]
+}

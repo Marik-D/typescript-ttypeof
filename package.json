@@ -1,0 +1,16 @@
+{
+  "name": "typescript-ttypeof",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "yarn tsc -p ./tsconfig.json",
+    "build:examples": "yarn build && yarn ttsc -p ./tsconfig.example.json"
+  },
+  "devDependencies": {
+    "@restless/sanitizers": "^0.2.2",
+    "ts-node": "^8.3.0",
+    "ttypescript": "^1.5.7",
+    "typescript": "^3.5.3"
+  }
+}
