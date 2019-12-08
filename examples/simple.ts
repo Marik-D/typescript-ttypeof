@@ -36,13 +36,13 @@ const classType = ttypeof<ClassNamespace.Class>()
 
 const classInstance = new (classType as ClassType).declaration()
 
-// function func<T>(num: number) {
-//   const genericType = ttypeof<T>()
-// }
-//
-// func<string>(5);
-//
-//
+function func<T>(num: number) {
+  const genericType = ttypeof<T>()
+}
+
+func<string>(5);
+
+
 // namespace compiled_iteration1 {
 //   function func<T>(type0: RuntimeType, num: number) {
 //     const genericType = type0

@@ -5,6 +5,9 @@ export default function (program: ts.Program, pluginOptions: {}) {
   return (ctx: ts.TransformationContext) => {
     return (sourceFile: ts.SourceFile) => {
       const typeChecker = program.getTypeChecker()
+
+      const functionsToTransform: ts.Symbol[] = []
+
       function convertToRuntimeType (typeNode: ts.TypeNode): RuntimeType {
         const type = typeChecker.getTypeFromTypeNode(typeNode);
         if(type.flags & ts.TypeFlags.String) {
@@ -18,7 +21,6 @@ export default function (program: ts.Program, pluginOptions: {}) {
         } else if(type.flags & ts.TypeFlags.Null) {
           return { type: 'null' }
         } else if(type.isClassOrInterface()) {
-          // console.log(type)
           if(type.objectFlags & ts.ObjectFlags.Interface) {
             const members: Record<string, RuntimeType> = {}
             type.getApparentProperties().forEach(member => {
@@ -54,8 +56,13 @@ export default function (program: ts.Program, pluginOptions: {}) {
             throw new Error('Unknown object type')
           }
         } else if(type.flags & ts.TypeFlags.TypeParameter) {
-          console.log(type)
-          throw new Error('Type parameters are not supported')
+          const declarationFunction = type.symbol.declarations[0].parent
+          if(!ts.isFunctionDeclaration(declarationFunction)) throw new Error('Expected function declaration')
+          if(!declarationFunction.name) throw new Error('name expected')
+          const symbol = typeChecker.getSymbolAtLocation(declarationFunction.name)
+          if(!symbol) throw new Error('Expected a symbol')
+          functionsToTransform.push(symbol)
+          return { type: 'reference', expr: identifierForTypeParam(type.symbol.escapedName) }
         } else {
           console.log(type)
           throw new Error('Unknown type')
@@ -77,12 +84,29 @@ export default function (program: ts.Program, pluginOptions: {}) {
         return ts.visitEachChild(node, visitor, ctx)
       }
 
-      return ts.visitEachChild(sourceFile, visitor, ctx)
+      const queriesTransformed = ts.visitEachChild(sourceFile, visitor, ctx)
+
+      console.log('to transform')
+      console.log(functionsToTransform)
+
+      function functionVisitor(node: ts.Node): ts.Node {
+        if(functionsToTransform.some(x => x.valueDeclaration === node)) {
+          console.log('function to transform')
+        } else if(ts.isCallExpression(node)) {
+          console.log('visited call')
+          const symbol = typeChecker.getSymbolAtLocation(node.expression)
+          console.log(symbol)
+        }
+
+        return ts.visitEachChild(node, functionVisitor, ctx)
+      }
+
+      return ts.visitEachChild(queriesTransformed, functionVisitor, ctx)
     }
   }
 }
 
-function serializeType (type: RuntimeType): ts.ObjectLiteralExpression {
+function serializeType (type: RuntimeType): ts.Expression {
   switch (type.type) {
     case 'interface': return ts.createObjectLiteral([
       ts.createPropertyAssignment('type', ts.createLiteral(type.type)),
@@ -99,6 +123,7 @@ function serializeType (type: RuntimeType): ts.ObjectLiteralExpression {
       )),
       ts.createPropertyAssignment('declaration', type.declaration),
     ])
+    case 'reference': return type.expr
     default: return ts.createObjectLiteral([ts.createPropertyAssignment('type', ts.createLiteral(type.type))])
   }
 }
@@ -111,3 +136,4 @@ function convertEntityNameToExpression(name: ts.EntityName): ts.Expression {
   }
 }
 
+const identifierForTypeParam = (name: ts.__String) => ts.createIdentifier(`__ttypeof$param_${ts.unescapeLeadingUnderscores(name)}`)

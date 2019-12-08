@@ -33,6 +33,11 @@ export interface ClassType {
   declaration: ts.Expression
 }
 
+export interface ReferenceType {
+  type: 'reference'
+  expr: ts.Expression
+}
+
 export type RuntimeType
   = NumberType
   | StringType
@@ -41,3 +46,4 @@ export type RuntimeType
   | NullType
   | InterfaceType
   | ClassType
+  | ReferenceType
